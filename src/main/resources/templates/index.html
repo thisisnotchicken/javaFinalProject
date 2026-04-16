@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>PayPal Spring Boot Demo</title>
+    <script src="https://www.paypal.com/sdk/js?client-id="></script>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        .container {
+            max-width: 700px;
+            margin: 60px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        #paypal-button-container {
+            margin-top: 20px;
+        }
+
+        #result {
+            margin-top: 25px;
+            text-align: left;
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Basic PayPal Payment Demo</h1>
+    <p>This version uses normal PayPal checkout only. No vault, no saved payment method flow.</p>
+    <div id="paypal-button-container"></div>
+    <div id="result"></div>
+
+</div>
+
+<script>
+    const resultBox = document.getElementById('result');
+
+    if (typeof paypal === 'undefined') {
+
+        resultBox.innerText = 'PayPal SDK did not load.';
+
+    } else {
+
+        paypal.Buttons({
+
+            // STEP 1: CREATE ORDER
+            createOrder: async function () {
+                const response = await fetch('/api/paypal/create-order', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                return data.id;
+            },
+
+            // STEP 2: AFTER USER APPROVES PAYMENT
+            onApprove: async function (data) {
+                const response = await fetch('/api/paypal/capture-order/' + data.orderID, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                resultBox.innerText =
+                    'Payment Successful!\n\n' +
+                    JSON.stringify(result, null, 2);
+            },
+
+            // STEP 3: HANDLE ERRORS
+            onError: function (err) {
+                console.error(err);
+                resultBox.innerText =
+                    'An error occurred during payment.\n\n' + err;
+            }
+
+        }).render('#paypal-button-container'); 
+    }
+</script>
+
+</body>
+</html>
